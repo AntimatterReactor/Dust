@@ -1,0 +1,14 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLambdasOnASingleLine: All
+
+BreakBeforeBraces: Stroustrup
+
+AccessModifierOffset: 0
+EmptyLineBeforeAccessModifier: LogicalBlock
+IndentAccessModifiers: false
