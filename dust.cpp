@@ -73,14 +73,17 @@ std::vector<Token> Lex(const char *fileName) // TODO: convert to filepath
 std::vector<Token> Optimize(const std::vector<Token> &v)
 {
     std::vector<Token> r;
-    for (size_t i = 0; i < v.size(); ++i)
-    {
-        if (i < v.size() - 3 && v.at(i).c == '['
-        && v.at(i+1) == Token{'n', -1} && v.at(i+2).c == ']') {
-            r.push_back({'e', 1});
-            i+=2;
+    bool hc = false;
+    for (size_t i = 0; i < v.size(); ++i) {
+        // Subtitutes `[-]` for 'e' instruction
+        if (i < v.size() - 3 && v.at(i).c == '[' &&
+            v.at(i + 1) == Token{'n', -1} && v.at(i + 2).c == ']') {
+            // Prevents generation of 'e' inst before any 'n' insts are made
+            if(hc) r.push_back({'e', 1});
+            i += 2;
         }
         else r.push_back(v.at(i));
+        if (v.at(i).c == 'n') hc = true;
     }
     return r;
 }
