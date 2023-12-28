@@ -70,20 +70,94 @@ std::vector<Token> Lex(const char *fileName) // TODO: convert to filepath
     return r;
 }
 
-class StmtAST {
-    std::variant<std::unique_ptr<StmtAST>, std::vector<Token>> child;
+std::vector<Token> Optimize(const std::vector<Token> &v)
+{
+    std::vector<Token> r;
+    for (size_t i = 0; i < v.size(); ++i)
+    {
+        if (i < v.size() - 3 && v.at(i).c == '['
+        && v.at(i+1) == Token{'n', -1} && v.at(i+2).c == ']') {
+            r.push_back({'e', 1});
+            i+=2;
+        }
+        else r.push_back(v.at(i));
+    }
+    return r;
+}
 
-    public:
-    StmtAST() = delete;
-    constexpr StmtAST(std::unique_ptr<StmtAST> &&ptr) : child(std::move(ptr)) {}
-    constexpr StmtAST(std::vector<Token> &&vec) : child(std::move(vec)) {}
-
-    ~StmtAST() = default;
-
-    llvm::Value *codegen();
+class AST {
+public:
+    AST() {}
+    virtual ~AST();
+    virtual llvm::Value *codegen() = 0;
+    virtual void spew() = 0;
 };
 
-void Parser() {}
+AST::~AST() {} //! DO NOT REMOVE, this is used so that no linker vtable error occur
+
+class ExprAST : public AST {
+    std::vector<Token> tok;
+
+    public:
+    ExprAST(std::vector<Token> &&vec) : tok(std::move(vec)) {}
+
+    llvm::Value *codegen() override;
+    void spew() override
+    {
+        std::cout << "(( ";
+        for (auto &n : this->tok)
+            std::cout << n.c << ", " << n.amount << "; ";
+        std::cout << "))\n";
+    }
+};
+
+class StmtAST : public AST {
+    std::optional<std::vector<std::unique_ptr<AST>>> children;
+
+    public:
+    StmtAST(std::vector<std::unique_ptr<AST>> &&vptr) : children(std::move(vptr)) {}
+
+    llvm::Value *codegen() override;
+    void spew() override
+    {
+        if (this->children)
+        {
+            std::cout << "{{{\n";
+            for (auto &n : this->children.value())
+                n->spew();
+            std::cout << "}}}\n";
+        }
+    }
+};
+
+static std::vector<Token> tokens;
+
+std::unique_ptr<AST> ParseExpression(std::vector<Token>::const_iterator &nit)
+{
+    std::vector<Token> t;
+    while (nit->c != '[' && nit->c != ']' && nit < tokens.cend())
+        t.push_back(*(nit++));
+    if (t.size() == 0)
+        return nullptr;
+    if (nit == tokens.cend())
+        t.push_back(Token::None);
+    return std::make_unique<ExprAST>(std::move(t));
+}
+
+std::unique_ptr<AST> ParseStatement(std::vector<Token>::const_iterator &nit)
+{   
+    std::vector<std::unique_ptr<AST>> r;
+    while (nit < tokens.cend())
+    {
+        if (auto e = ParseExpression(nit); e != nullptr)
+            r.push_back(std::move(e));
+        if (nit->c == '[')
+            r.push_back(std::move(ParseStatement(++nit)));
+        if ((++nit)->c == ']')
+            return std::make_unique<StmtAST>(std::move(r));
+    }
+    return std::make_unique<StmtAST>(std::move(r));
+}
 
 static std::unique_ptr<llvm::LLVMContext> TheContext;
 static std::unique_ptr<llvm::Module> TheModule;
