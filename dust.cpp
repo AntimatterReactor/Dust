@@ -148,17 +148,33 @@ std::unique_ptr<AST> ParseExpression(std::vector<Token>::const_iterator &nit)
 }
 
 std::unique_ptr<AST> ParseStatement(std::vector<Token>::const_iterator &nit)
-{   
+{
     std::vector<std::unique_ptr<AST>> r;
-    while (nit < tokens.cend())
-    {
+    while (nit < tokens.cend()) {
+        if (auto e = ParseExpression(nit); e != nullptr)
+            r.push_back(std::move(e));
+        if (nit->c == '[') r.push_back(std::move(ParseStatement(++nit)));
+        if (nit->c == ']')
+        {
+            ++nit;
+            return std::make_unique<StmtAST>(std::move(r));
+        }
+    }
+    return std::make_unique<StmtAST>(std::move(r));
+}
+
+std::unique_ptr<AST> ParseTopStatement(std::vector<Token>::const_iterator &nit)
+{
+    std::vector<std::unique_ptr<AST>> r;
+    do {
         if (auto e = ParseExpression(nit); e != nullptr)
             r.push_back(std::move(e));
         if (nit->c == '[')
+        {
             r.push_back(std::move(ParseStatement(++nit)));
-        if ((++nit)->c == ']')
-            return std::make_unique<StmtAST>(std::move(r));
-    }
+            --nit;
+        }
+    } while ((++nit) < tokens.cend());
     return std::make_unique<StmtAST>(std::move(r));
 }
 
