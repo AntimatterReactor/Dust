@@ -6,9 +6,13 @@
 struct Token {
     char c;
     int amount;
+    friend bool operator==(const Token& lhs, const Token& rhs)
+    {
+        return lhs.c == rhs.c && lhs.amount == rhs.amount;
+    }
+    static Token None;
 };
 
-Token getToken(std::istream &in); // TODO: implement
 constexpr bool isvalidBF(const char ch)
 {
     switch (ch) {

@@ -3,8 +3,4 @@
 #include <fstream>
 #include <filesystem>
 
-Token getToken(std::istream &in)
-{
-
-}
-
+Token Token::None = {0,0};
