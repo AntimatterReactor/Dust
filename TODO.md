@@ -1,0 +1,8 @@
+- [ ] Use `lld` to call linker directly
+- [ ] Optimize splintered instructions after `e` insts elimination
+- [ ] Create PseudoInterpreter for optimization purposes
+- [ ] Use `llvm`'s optimizers
+- [ ] Implement command line interface
+- [ ] Implement better error and warning messages
+- [ ] Implement extended syntax
+- [ ] Refactor/shard code
